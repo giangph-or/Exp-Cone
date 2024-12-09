@@ -57,35 +57,6 @@ double Conic::calculate_optimal_bound_denominator(Data data, int i) {
     return model.get(GRB_DoubleAttr_ObjVal) + data.no_purchase[i];
 }
 
-int Conic::calculate_bound_y(Data data) {
-    vector<int> chosen(data.number_products);
-    vector<pair<double, int>> u(data.number_products);
-    for (int j = 0; j < data.number_products; ++j)
-        u[j] = make_pair(data.cost[j], j);
-
-    sort(u.begin(), u.end());
-    int number_chosen = 0;
-    for (int s = 0; s < data.number_sets; ++s) {
-        double current_capacity = 0;
-        int count = 0;
-        while (count < data.number_products) {
-            if (data.in_set[u[count].second][s] == 1 && current_capacity + data.cost[u[count].second] <= data.capacity_each_set) {
-                current_capacity += data.cost[u[count].second];
-                number_chosen++;
-            }
-            count++;
-        }
-    }
-    for (int j = 0; j < data.number_products; ++j) {
-        int check_in_set = 0;
-        for (int s = 0; s < data.number_sets; ++s)
-            if (data.in_set[j][s] == 1) check_in_set = 1;
-        if (check_in_set == 0) number_chosen++;
-    }
-    if (number_chosen >= data.number_products) number_chosen = data.number_products;
-    return number_chosen;
-}
-
 double Conic::optimal_bound_y_in(Data data, int i, int j, double alpha) {
     GRBEnv env = GRBEnv(true);
     env.start();
