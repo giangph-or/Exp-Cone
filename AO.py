@@ -20,13 +20,9 @@ class Data:
     def read_data(self, path, noPay):
         file = open(path, 'r').readlines()
         self.number_products = int(file[0])
-        #print(self.number_products)
         self.number_customers = int(file[1])
-        #print(self.number_customers)
         self.number_sets = int(file[2])
-        #print(self.number_sets)
         self.capacity_each_set = int(file[3])
-        #print(self.capacity_each_set)
         line = 4
         for _ in range(self.number_customers):
             self.utilities.append(list(map(float, file[line].split())))
@@ -150,22 +146,6 @@ class Solver:
             if number_sub_intervals[i] > max_number_sub_intervals:
                 max_number_sub_intervals = number_sub_intervals[i]
 
-        # bound_y = []
-        # upper_bound_y = []
-        # lower_bound_y = []
-        # bound_z = []
-        # upper_bound_z = []
-        # lower_bound_z = []
-        # for i in range(data.number_customers):
-        #     bound_y.append(self.calculate_optimal_bound_y(data, i, alpha[i]))
-        #     bound_z.append(self.calculate_optimal_bound_z(data, i))
-
-        # for i in range(data.number_customers):
-        #     lower_bound_y.append(np.log(alpha[i] * data.no_purchase[i]))
-        #     upper_bound_y.append(np.log(bound_y[i]))
-        #     lower_bound_z.append(-np.log(bound_z[i]))
-        #     upper_bound_z.append(-np.log(data.no_purchase[i]))
-
         with Model('ao') as M:
             x = M.variable('x', data.number_products, Domain.binary())
             y = M.variable('y', data.number_customers, Domain.unbounded())
@@ -173,14 +153,6 @@ class Solver:
             theta = M.variable('theta', data.number_customers, Domain.unbounded())
             r = M.variable('r', [data.number_customers,max_number_sub_intervals], Domain.binary())
             s = M.variable('s', [data.number_customers,max_number_sub_intervals], Domain.inRange(0.0,1.0))
-
-            # for i in range(data.number_customers):
-            #     M.constraint(y[i] <= upper_bound_y[i])
-            #     M.constraint(y[i] >= lower_bound_y[i])
-            #     M.constraint(z[i] <= upper_bound_z[i])
-            #     M.constraint(z[i] >= lower_bound_z[i])
-            #     M.constraint(theta[i] <= np.exp(upper_bound_y[i] + upper_bound_z[i]))
-            #     M.constraint(theta[i] >= np.exp(lower_bound_y[i] + lower_bound_z[i]))
 
             #Constraints related to e^{y_i}
 	        #exp(c[i][0]) = alpha * no_purchase[i] => remove form both sides
