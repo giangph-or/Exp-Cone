@@ -30,8 +30,6 @@ public:
     double calculate_master_obj(Data data, vector<int> x);
     double calculate_original_obj_tmp(Data data, vector<int> x, vector<double> alpha, int i);
     double calculate_optimal_bound_y(Data data, int i, double alpha);
-    double calculate_bound_y(Data data, int i, double alpha);
-    double calculate_bound_z(Data data, int i);
     double calculate_optimal_bound_z(Data data, int i);
     vector<int> greedy(Data data, vector<double> alpha);
     void solve(Data data);
