@@ -26,7 +26,6 @@ public:
     Conic(Data data, double time_limit, string outfile);
     double calculate_master_obj(Data data, vector<int> x);
     double calculate_optimal_bound_denominator(Data data, int i);
-    int calculate_bound_y(Data data);
     double optimal_bound_y_in(Data data, int i, int j, double alpha);
     double optimal_bound_y_notin(Data data, int i, int j, double alpha);
     void solve(Data data);
