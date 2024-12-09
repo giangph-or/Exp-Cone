@@ -12,20 +12,6 @@ Conic::Conic(Data data, double time_limit, string outfile) {
     this->out_res_csv = outfile;
 }
 
-CBSen::CBSen() {
-
-}
-
-CBSen::CBSen(GRBVar* varx, GRBVar* vary, int p, int c, vector<double> n, vector<vector<double>> u, vector<vector<double>> r) {
-    x = varx;
-    y = vary;
-    products = p;
-    customers = c;
-    noPay = n;
-    util = u;
-    ren = r;
-}
-
 double Conic::calculate_master_obj(Data data, vector<int> x) {
     //double obj = 0;
     //for (int i = 0; i < data.number_customers; ++i) {
@@ -116,85 +102,6 @@ int Conic::calculate_bound_y(Data data) {
     return number_chosen;
 }
 
-vector<vector<double>> Conic::calculate_bound_y_in(Data data) {
-    vector<vector<double>> lb_in(data.number_customers);
-    for (int i = 0; i < data.number_customers; ++i)
-        lb_in[i].resize(data.number_products);
-
-    for (int i = 0; i < data.number_customers; ++i) {
-        for (int k = 0; k < data.number_products; ++k) {
-            vector<pair<double, int>> u(data.number_products);
-            for (int j = 0; j < data.number_products; ++j)
-                u[j] = make_pair(data.utilities[i][j], j);
-
-            sort(u.begin(), u.end(), greater<pair<double, int>>());
-            for (int j = 0; j < data.number_products; ++j)
-                if (u[j].second == k) {
-                    u.erase(u.begin() + j);
-                    break;
-                }
-
-            lb_in[i][k] = data.utilities[i][k];
-
-            int count = 0;
-            //while (count < calculate_bound_y(data)) {
-            while (count < data.capacity_each_set-1) {
-                lb_in[i][k] += u[count].first;
-                count++;
-            }
-
-            ////General
-            //double cost = 0;
-            //for (int a = 0; a < u.size(); ++a)
-            //    if (cost + data.fraction2[u[a].second] <= data.capacity_each_set) {
-            //        lb_in[i][k] += u[a].first;
-            //        cost += data.fraction2[u[a].second];
-            //    }
-        }
-    }
-    return lb_in;
-}
-
-vector<vector<double>> Conic::calculate_bound_y_notin(Data data) {
-    vector<vector<double>> lb_notin(data.number_customers);
-    for (int i = 0; i < data.number_customers; ++i)
-        lb_notin[i].resize(data.number_products);
-
-    for (int i = 0; i < data.number_customers; ++i) {
-        for (int k = 0; k < data.number_products; ++k) {
-            vector<pair<double, int>> u(data.number_products);
-            for (int j = 0; j < data.number_products; ++j)
-                u[j] = make_pair(data.utilities[i][j], j);
-
-            sort(u.begin(), u.end(), greater<pair<double, int>>());
-            for (int j = 0; j < data.number_products; ++j)
-                if (u[j].second == k) {
-                    u.erase(u.begin() + j);
-                    break;
-                }
-
-            lb_notin[i][k] = 0;
-
-            int count = 0;
-            //while (count < calculate_bound_y(data)) {
-            while (count < data.capacity_each_set) {
-                lb_notin[i][k] += u[count].first;
-                count++;
-            }
-
-            ////General
-            //double cost = 0;
-            //for (int a = 0; a < u.size(); ++a)
-            //    if (cost + data.fraction2[u[a].second] <= data.capacity_each_set) {
-            //        lb_notin[i][k] += u[a].first;
-            //        cost += data.fraction2[u[a].second];
-            //    }
-        }
-    }
-    return lb_notin;
-}
-
-//for overlap cases
 double Conic::optimal_bound_y_in(Data data, int i, int j, double alpha) {
     GRBEnv env = GRBEnv(true);
     env.start();
@@ -229,7 +136,6 @@ double Conic::optimal_bound_y_in(Data data, int i, int j, double alpha) {
     return model.get(GRB_DoubleAttr_ObjVal);
 }
 
-//for overlap cases
 double Conic::optimal_bound_y_notin(Data data, int i, int j, double alpha) {
     GRBEnv env = GRBEnv(true);
     env.start();
@@ -264,69 +170,6 @@ double Conic::optimal_bound_y_notin(Data data, int i, int j, double alpha) {
     return model.get(GRB_DoubleAttr_ObjVal);
 }
 
-vector<vector<double>> Conic::subset_bound_y_in(Data data) {
-    vector<vector<double>> lb_in(data.number_customers);
-    for (int i = 0; i < data.number_customers; ++i)
-        lb_in[i].resize(data.number_products);
-
-    for (int i = 0; i < data.number_customers; ++i) {
-        for (int k = 0; k < data.number_products; ++k) {
-            vector<pair<double, int>> u(data.number_products);
-            for (int j = 0; j < data.number_products; ++j)
-                u[j] = make_pair(data.utilities[i][j], j);
-
-            sort(u.begin(), u.end(), greater<pair<double, int>>());
-            for (int j = 0; j < data.number_products; ++j)
-                if (u[j].second == k) {
-                    u.erase(u.begin() + j);
-                    break;
-                }
-
-            lb_in[i][k] = data.utilities[i][k];
-            vector<int> in(10, data.sub_capacity_each_set);
-
-            for (int a = 0; a < u.size(); ++a)
-                for (int s = 0; s < 10; ++s)
-                    if (in[s] > 0 && data.in_set[u[a].second][s] == 1) {
-                        lb_in[i][k] += u[a].first;
-                        in[s]--;
-                    }
-        }
-    }
-    return lb_in;
-}
-
-vector<vector<double>> Conic::subset_bound_y_notin(Data data) {
-    vector<vector<double>> lb_notin(data.number_customers);
-    for (int i = 0; i < data.number_customers; ++i)
-        lb_notin[i].resize(data.number_products);
-
-    for (int i = 0; i < data.number_customers; ++i) {
-        for (int k = 0; k < data.number_products; ++k) {
-            vector<pair<double, int>> u(data.number_products);
-            for (int j = 0; j < data.number_products; ++j)
-                u[j] = make_pair(data.utilities[i][j], j);
-
-            sort(u.begin(), u.end(), greater<pair<double, int>>());
-            for (int j = 0; j < data.number_products; ++j)
-                if (u[j].second == k) {
-                    u.erase(u.begin() + j);
-                    break;
-                }
-
-            lb_notin[i][k] = 0;
-            vector<int> in(10, data.sub_capacity_each_set);
-            for (int a = 0; a < u.size(); ++a)
-                for (int s = 0; s < 10; ++s)
-                    if (in[s] > 0 && data.in_set[u[a].second][s] == 1) {
-                        lb_notin[i][k] += u[a].first;
-                        in[s]--;
-                    }
-        }
-    }
-    return lb_notin;
-}
-
 void Conic::solve(Data data) {
     auto start = chrono::steady_clock::now(); //get start time
     vector<double> alpha(data.number_customers, -1);
@@ -339,10 +182,6 @@ void Conic::solve(Data data) {
     for (int i = 0; i < data.number_customers; ++i)
         upper_bound_denominator[i] = calculate_optimal_bound_denominator(data, i);
 
-    //vector<vector<double>> bound_in = calculate_bound_y_in(data);
-    //vector<vector<double>> bound_notin = calculate_bound_y_notin(data);
-    
-    //for overlap cases
     vector<vector<double>> bound_in(data.number_customers);
     vector<vector<double>> bound_notin(data.number_customers);
     for (int i = 0; i < data.number_customers; ++i) {
@@ -354,10 +193,6 @@ void Conic::solve(Data data) {
             bound_in[i][j] = optimal_bound_y_in(data, i, j, alpha[i]);
             bound_notin[i][j] = optimal_bound_y_notin(data, i, j, alpha[i]);
         }
-
-    //General
-    //vector<vector<double>> subset_bound_in = subset_bound_y_in(data);
-    //vector<vector<double>> subset_bound_notin = subset_bound_y_notin(data);
 
     GRBEnv env = GRBEnv(true);
     env.start();
@@ -430,17 +265,8 @@ void Conic::solve(Data data) {
     for (int i = 0; i < data.number_customers; ++i)
         for (int j = 0; j < data.number_products; ++j) {
             model.addConstr(z[i][j] <= x[j] * (1 / (data.no_purchase[i] + data.utilities[i][j])));
-
-            //if (bound_in[i][j] >= subset_bound_in[i][j])
-                model.addConstr(z[i][j] >= x[j] * (1 / (data.no_purchase[i] + bound_in[i][j])));
-            //else
-                //model.addConstr(z[i][j] >= x[j] * (1 / (data.no_purchase[i] + subset_bound_in[i][j])));
-
-            //if (bound_notin[i][j] >= subset_bound_notin[i][j])
-                model.addConstr(z[i][j] <= y[i] - (1 - x[j]) * (1 / (data.no_purchase[i] + bound_notin[i][j])));
-            //else
-                //model.addConstr(z[i][j] <= y[i] - (1 - x[j]) * (1 / (data.no_purchase[i] + subset_bound_notin[i][j])));
-
+            model.addConstr(z[i][j] >= x[j] * (1 / (data.no_purchase[i] + bound_in[i][j])));
+            model.addConstr(z[i][j] <= y[i] - (1 - x[j]) * (1 / (data.no_purchase[i] + bound_notin[i][j])));
             model.addConstr(z[i][j] >= y[i] - (1 - x[j]) * (1 / data.no_purchase[i]));
         }
 
@@ -453,29 +279,6 @@ void Conic::solve(Data data) {
         model.addConstr(sum <= data.capacity_each_set, "ct_set_cap" + to_string(s));
     }
 
-    ////General
-    //for (int s = 0; s < 10; ++s) {
-    //    GRBLinExpr sum;
-    //    for (int j = 0; j < data.number_products; ++j)
-    //        if (data.in_set[j][s] == 1)
-    //            sum += data.cost[j] * x[j];
-    //    model.addConstr(sum <= data.sub_capacity_each_set, "ct_set_cap" + to_string(s));
-    //}
-
-    //GRBLinExpr cost;
-    //for (int j = 0; j < data.number_products; ++j)
-    //    cost += data.fraction2[j] * x[j];
-    //model.addConstr(cost <= data.capacity_each_set, "ct_set_cap");
-
-    //cout << "Objective\n" << endl;
-    //GRBLinExpr obj;
-    //for (int i = 0; i < data.number_customers; ++i) {
-    //    obj += data.fraction[i] * alpha[i] * data.no_purchase[i] * y[i];
-    //    for (int j = 0; j < data.number_products; ++j)
-    //        obj += data.fraction[i] * (alpha[i] - data.revenue[i][j]) * z[i][j] * data.utilities[i][j];
-    //}
-
-    //for overlap cases
     GRBLinExpr obj;
     for (int i = 0; i < data.number_customers; ++i) {
         obj += alpha[i] * data.no_purchase[i] * y[i];
@@ -496,9 +299,6 @@ void Conic::solve(Data data) {
     //model.set(GRB_DoubleParam_MIPGap, 1e-8);
     model.write("conic.lp");
     //model.set(GRB_IntParam_OutputFlag, 0);
-
-    //CBSen cb = CBSen(x, y, data.number_products, data.number_customers, data.no_purchase, data.utilities, data.revenue);
-    //model.setCallback(&cb);
 
     model.optimize();
 
@@ -544,86 +344,4 @@ void Conic::solve(Data data) {
         if (x_sol[j] == 1)
             report_results << j << " ";
     report_results.close();
-}
-
-void CBSen::callback() {
-    try {
-        if (where == GRB_CB_MIPSOL) {
-            double* initial_x = new double[products];
-            double* initial_y = new double[customers];
-            initial_x = getSolution(x, products);
-            initial_y = getSolution(y, customers);
-
-            vector<double> initial_denominator(customers, 0);
-            for (int i = 0; i < customers; ++i) {
-                initial_denominator[i] += noPay[i];
-                for (int j = 0; j < products; ++j)
-                    initial_denominator[i] += initial_x[j] * util[i][j];
-            }
-
-            //Calculate subgradient y
-            vector<double> partitial_y(customers, 0);
-            for (int i = 0; i < customers; ++i)
-                partitial_y[i] = 1 / initial_denominator[i];
-
-            vector<vector<double>> subgradient_y(customers);
-            for (int i = 0; i < customers; ++i)
-                subgradient_y[i].resize(products, 0);
-
-            for (int i = 0; i < customers; ++i)
-                for (int j = 0; j < products; ++j)
-                    subgradient_y[i][j] -= util[i][j] / (initial_denominator[i] * initial_denominator[i]);
-
-            //cout << "Outer-cuts\n" << endl;
-            for (int i = 0; i < customers; ++i) {
-                GRBLinExpr grad;
-                for (int j = 0; j < products; ++j)
-                    grad += subgradient_y[i][j] * (x[j] - initial_x[j]);
-
-                addLazy(y[i] >= partitial_y[i] + grad);
-                //cout << "Outer-cuts " << i << "\n" << endl;
-            }
-
-            ////cout << "Calculate total utility\n" << endl;
-            //vector<double> sum_uti_customer(customers, 0);
-            //for (int i = 0; i < customers; ++i) {
-            //	sum_uti_customer[i] += noPay[i];
-            //	for (int j = 0; j < products; ++j)
-            //		sum_uti_customer[i] += util[i][j];
-            //}
-
-            ////cout << "Submodular-cuts\n" << endl;
-            //for (int i = 0; i < customers; ++i) {
-            //	if (initial_y[i] < partitial_y[i]) {
-            //		GRBLinExpr submodular_cut_a_z, submodular_cut_b_z;
-            //		for (int j = 0; j < products; ++j)
-            //			if (initial_x[j] == 1) {
-            //				submodular_cut_a_z += (1 - x[j]) * util[i][j] /
-            //					(sum_uti_customer[i] * (sum_uti_customer[i] - util[i][j]));
-            //				submodular_cut_b_z += (1 - x[j]) * util[i][j] /
-            //					(initial_denominator[i] * (initial_denominator[i] - util[i][j]));
-            //			}
-            //			else {
-            //				submodular_cut_a_z -= x[j] * util[i][j] /
-            //					(initial_denominator[i] * (initial_denominator[i] + util[i][j]));
-            //				submodular_cut_b_z -= x[j] * util[i][j] /
-            //					(noPay[i] * (noPay[i] + util[i][j]));
-            //			}
-
-            //		submodular_cut_a_z += partitial_y[i];
-            //		addLazy(y[i] >= submodular_cut_a_z);
-            //		submodular_cut_b_z += partitial_y[i];
-            //		addLazy(y[i] >= submodular_cut_b_z);
-            //		//cout << "Submodular-cuts " << i << "\n" << endl;
-            //	}
-            //}
-        }
-    }
-    catch (GRBException e) {
-        cout << "Error number: " << e.getErrorCode() << endl;
-        cout << e.getMessage() << endl;
-    }
-    catch (...) {
-        cout << "Error during callback" << endl;
-    }
 }
