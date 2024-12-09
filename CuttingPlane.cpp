@@ -145,85 +145,6 @@ double CuttingPlane::calculate_optimal_bound_z(Data data, int i) {
 	return model.get(GRB_DoubleAttr_ObjVal) + data.no_purchase[i];
 }
 
-double CuttingPlane::calculate_bound_y(Data data, int i, double alpha) {
-	vector<pair<double, int>> u(data.number_products);
-	for (int j = 0; j < data.number_products; ++j)
-		u[j] = make_pair(data.cost[j], j);
-
-	sort(u.begin(), u.end());
-	int number_chosen = 0;
-	for (int s = 0; s < data.number_sets; ++s) {
-		double current_capacity = 0;
-		int count = 0;
-		while (count < data.number_products) {
-			if (data.in_set[u[count].second][s] == 1 && current_capacity + data.cost[u[count].second] <= data.capacity_each_set) {
-				current_capacity += data.cost[u[count].second];
-				number_chosen++;
-			}
-			count++;
-		}
-	}
-	for (int j = 0; j < data.number_products; ++j) {
-		int check_in_set = 0;
-		for (int s = 0; s < data.number_sets; ++s)
-			if (data.in_set[j][s] == 1) check_in_set = 1;
-		if (check_in_set == 0) number_chosen++;
-	}
-	//cout << "Chosen y = " << number_chosen << endl;
-	double bound = 0;
-	vector<pair<double, int>> c(data.number_products);
-	for (int j = 0; j < data.number_products; ++j)
-		c[j] = make_pair(data.utilities[i][j] * (alpha - data.revenue[i][j]), j);
-
-	sort(c.begin(), c.end(), greater<pair<double, int>>());
-	if (number_chosen >= data.number_products) number_chosen = data.number_products;
-	for (int j = 0; j < number_chosen; ++j)
-		bound += c[j].first;
-	bound += alpha * data.no_purchase[i];
-	//cout << "Bound y = [" << log(alpha * data.no_purchase[i]) << "," << log(bound) << "]" << endl;
-	//cout << "Bound u = [" << alpha * data.no_purchase[i] << "," << bound << "]" << endl;
-	return bound;
-}
-
-double CuttingPlane::calculate_bound_z(Data data, int i) {
-	vector<pair<double, int>> u(data.number_products);
-	for (int j = 0; j < data.number_products; ++j)
-		u[j] = make_pair(data.cost[j], j);
-
-	sort(u.begin(), u.end());
-	int number_chosen = 0;
-	for (int s = 0; s < data.number_sets; ++s) {
-		double current_capacity = 0;
-		int count = 0;
-		while (count < data.number_products) {
-			if (data.in_set[u[count].second][s] == 1 && current_capacity + data.cost[u[count].second] <= data.capacity_each_set) {
-				current_capacity += data.cost[u[count].second];
-				number_chosen++;
-			}
-			count++;
-		}
-	}
-	for (int j = 0; j < data.number_products; ++j) {
-		int check_in_set = 0;
-		for (int s = 0; s < data.number_sets; ++s)
-			if (data.in_set[j][s] == 1) check_in_set = 1;
-		if (check_in_set == 0) number_chosen++;
-	}
-	//cout << "Chosen z = " << number_chosen << endl;
-	double bound = 0;
-	vector<pair<double, int>> c(data.number_products);
-	for (int j = 0; j < data.number_products; ++j)
-		c[j] = make_pair(data.utilities[i][j], j);
-
-	sort(c.begin(), c.end(), greater<pair<double, int>>());
-	if (number_chosen >= data.number_products) number_chosen = data.number_products;
-	for (int j = 0; j < number_chosen; ++j)
-		bound += c[j].first;
-	bound += data.no_purchase[i];
-	//cout << "Bound z = [" << -log(bound) << "," << -log(data.no_purchase[i]) << "]" << endl;
-	return bound;
-}
-
 vector<int> CuttingPlane::greedy(Data data, vector<double> alpha) {
 	auto start = chrono::steady_clock::now();
 	vector<int> chosen(data.number_products, 0);
@@ -331,7 +252,6 @@ void CuttingPlane::solve(Data data) {
 	u = new GRBVar[data.number_customers];
 	for (int i = 0; i < data.number_customers; ++i) {
 		double bound = calculate_optimal_bound_y(data, i, alpha[i]);
-		//double bound = calculate_bound_y(data, i, alpha[i]);
 		y[i] = model.addVar(log(alpha[i] * data.no_purchase[i]), log(bound), 0, GRB_CONTINUOUS, "y_" + to_string(i));
 		u[i] = model.addVar(alpha[i] * data.no_purchase[i], bound, 0, GRB_CONTINUOUS, "u_" + to_string(i));
 		lower_bound_y.push_back(log(alpha[i] * data.no_purchase[i]));
@@ -345,7 +265,6 @@ void CuttingPlane::solve(Data data) {
 	z = new GRBVar[data.number_customers];
 	for (int i = 0; i < data.number_customers; ++i) {
 		double bound = calculate_optimal_bound_z(data, i);
-		//double bound = calculate_bound_z(data, i);
 		z[i] = model.addVar(-log(bound), -log(data.no_purchase[i]), 0, GRB_CONTINUOUS, "z_" + to_string(i));
 		lower_bound_z.push_back(-log(bound));
 		upper_bound_z.push_back(-log(data.no_purchase[i]));
@@ -578,7 +497,6 @@ void CuttingPlane::solve_multicut(Data data, int number_cuts) {
 	u = new GRBVar[data.number_customers];
 	for (int i = 0; i < data.number_customers; ++i) {
 		double bound = calculate_optimal_bound_y(data, i, alpha[i]);
-		//double bound = calculate_bound_y(data, i, alpha[i]);
 		y[i] = model.addVar(log(alpha[i] * data.no_purchase[i]), log(bound), 0, GRB_CONTINUOUS, "y_" + to_string(i));
 		u[i] = model.addVar(alpha[i] * data.no_purchase[i], bound, 0, GRB_CONTINUOUS, "u_" + to_string(i));
 		lower_bound_y.push_back(log(alpha[i] * data.no_purchase[i]));
@@ -592,7 +510,6 @@ void CuttingPlane::solve_multicut(Data data, int number_cuts) {
 	z = new GRBVar[data.number_customers];
 	for (int i = 0; i < data.number_customers; ++i) {
 		double bound = calculate_optimal_bound_z(data, i);
-		//double bound = calculate_bound_z(data, i);
 		z[i] = model.addVar(-log(bound), -log(data.no_purchase[i]), 0, GRB_CONTINUOUS, "z_" + to_string(i));
 		lower_bound_z.push_back(-log(bound));
 		upper_bound_z.push_back(-log(data.no_purchase[i]));
