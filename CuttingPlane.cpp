@@ -102,16 +102,6 @@ double CuttingPlane::calculate_optimal_bound_y(Data data, int i, double alpha) {
 		model.addConstr(sum <= data.capacity_each_set, "ct_set_cap" + to_string(s));
 	}
 
-	//Set revenue constraints
-	//for (int s = 0; s < data.number_sets; ++s) {
-	//	GRBLinExpr sum;
-	//	for (int j = 0; j < data.number_products; ++j)
-	//		if (data.in_set[j][s] == 1)
-	//			for (int i = 0; i < data.number_customers; ++i)
-	//				sum += data.revenue[i][j] * x[j];
-	//	model.addConstr(sum >= 2, "ct_set_revenue" + to_string(s));
-	//}
-
 	GRBLinExpr obj;
 	for (int j = 0; j < data.number_products; ++j)
 		obj += data.utilities[i][j] * x[j] * (alpha - data.revenue[i][j]);
@@ -142,16 +132,6 @@ double CuttingPlane::calculate_optimal_bound_z(Data data, int i) {
 				sum += data.cost[j] * x[j];
 		model.addConstr(sum <= data.capacity_each_set, "ct_set_cap" + to_string(s));
 	}
-
-	//Set revenue constraints
-	//for (int s = 0; s < data.number_sets; ++s) {
-	//	GRBLinExpr sum;
-	//	for (int j = 0; j < data.number_products; ++j)
-	//		if (data.in_set[j][s] == 1)
-	//			for(int i = 0; i < data.number_customers; ++i)
-	//				sum += data.revenue[i][j] * x[j];
-	//	model.addConstr(sum >= 2, "ct_set_revenue" + to_string(s));
-	//}
 
 	GRBLinExpr obj;
 	for (int j = 0; j < data.number_products; ++j)
