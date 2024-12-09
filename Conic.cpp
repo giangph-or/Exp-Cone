@@ -13,17 +13,6 @@ Conic::Conic(Data data, double time_limit, string outfile) {
 }
 
 double Conic::calculate_master_obj(Data data, vector<int> x) {
-    //double obj = 0;
-    //for (int i = 0; i < data.number_customers; ++i) {
-    //    double ts = 0, ms = data.no_purchase[i];
-    //    for (int j = 0; j < data.number_products; ++j) {
-    //        ts += data.revenue[i][j] * x[j] * data.utilities[i][j];
-    //        ms += x[j] * data.utilities[i][j];
-    //    }
-    //    obj += data.fraction[i] * ts / ms;
-    //}
-    //return obj;
-
     double obj = 0;
     for (int i = 0; i < data.number_customers; ++i) {
         double ts = 0, ms = data.no_purchase[i];
@@ -54,11 +43,6 @@ double Conic::calculate_optimal_bound_denominator(Data data, int i) {
                 sum += data.cost[j] * x[j];
         model.addConstr(sum <= data.capacity_each_set, "ct_set_cap" + to_string(s));
     }
-
-    //GRBLinExpr cost;
-    //for (int j = 0; j < data.number_products; ++j)
-    //    cost += data.fraction2[j] * x[j];
-    //model.addConstr(cost <= data.capacity_each_set, "ct_set_cap");
 
     GRBLinExpr obj;
     for (int j = 0; j < data.number_products; ++j)
