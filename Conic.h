@@ -11,21 +11,6 @@
 #include "ProblemReader.h"
 using namespace std;
 
-class CBSen : public GRBCallback {
-public:
-    int products;
-    int customers;
-    vector<double> noPay;
-    vector<vector<double>> util;
-    vector<vector<double>> ren;
-    GRBVar* x;
-    GRBVar* y;
-    CBSen();
-    CBSen(GRBVar* x, GRBVar* y, int products, int customers, vector<double> noPay, vector<vector<double>> util, vector<vector<double>> ren);
-protected:
-    void callback();
-};
-
 class Conic {
 public:
     Data data;
@@ -42,11 +27,7 @@ public:
     double calculate_master_obj(Data data, vector<int> x);
     double calculate_optimal_bound_denominator(Data data, int i);
     int calculate_bound_y(Data data);
-    vector<vector<double>> calculate_bound_y_in(Data data);
-    vector<vector<double>> calculate_bound_y_notin(Data data);
     double optimal_bound_y_in(Data data, int i, int j, double alpha);
     double optimal_bound_y_notin(Data data, int i, int j, double alpha);
-    vector<vector<double>> subset_bound_y_in(Data data);
-    vector<vector<double>> subset_bound_y_notin(Data data);
     void solve(Data data);
 };
